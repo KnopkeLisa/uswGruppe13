@@ -181,8 +181,8 @@ def download_inflation():
     (df["coicop"].isin(wanted_coicop))
 ]
     df = pd.concat([
-    df.iloc[:, :4],
-    df.iloc[:, 328:]
+    df.iloc[:, :4], # Die ersten 4 Spalten bleiben
+    df.iloc[:, 328:] # Zeiträume 1992-2022 fliegen raus
     ], axis=1)
 
     df.to_csv(
@@ -206,8 +206,8 @@ def download_gdelt_news():
 
     filters = Filters(
         keyword="Lufthansa",
-        start_date="2025-01-01",
-        end_date="2025-03-31"
+        start_date="2026-04-01",
+        end_date="2026-05-01"
     )
 
     timeline = gd.timeline_search(
@@ -221,7 +221,7 @@ def download_gdelt_news():
         "gdelt_tourism_news.csv"
     )
 
-    timeline.to_csv(filename, index=False)
+    timeline.to_csv(filename, mode="a", header=not os.path.exists(filename), index=False)
 
 def download_google_rss_news():
     print("\n=== Google RSS Download ===")
@@ -340,8 +340,8 @@ def main():
     #download_stock_data()
     #download_google_trends()
     #download_holidays()
-    download_inflation()
-    #download_gdelt_news()
+    #download_inflation()
+    download_gdelt_news()
     #download_google_rss_news()
     #downloadWetter()
     #download_europe_health_data()

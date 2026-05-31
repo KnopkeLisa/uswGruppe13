@@ -298,27 +298,35 @@ def downloadGesundheitsdaten():
 
 
 def download_europe_health_data():
-    """
-    Lädt die wöchentlichen Inzidenzraten akuter Atemwegserkrankungen (ILIARIRates).
-    """
-    print("\n=== ECDC Europe Health Data Download ===")
-
-    raw_url = "https://raw.githubusercontent.com/EU-ECDC/Respiratory_viruses_weekly_data/main/data/ILIARIRates.csv"
-    filename = os.path.join(OUTPUT_DIR, "ECDC_Europa_Inzidenz.csv")
-
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    urls = {
+    "grippeweb": {
+        "url": "https://raw.githubusercontent.com/robert-koch-institut/GrippeWeb_Daten_des_Wochenberichts/main/GrippeWeb_Daten_des_Wochenberichts.tsv",
+        "sep": "\t"
+    },
+    "are_konsultationsinzidenz": {
+        "url": "https://raw.githubusercontent.com/robert-koch-institut/ARE-Konsultationsinzidenz/main/ARE-Konsultationsinzidenz.tsv",
+        "sep": "\t"
+    },
+    "ECDC_Europa_Inzidenz": {
+        "url": "https://raw.githubusercontent.com/EU-ECDC/Respiratory_viruses_weekly_data/main/data/ILIARIRates.csv",
+        "sep": ","
     }
+}
 
-    print("Lade ILIARIRates.csv von ECDC GitHub-Server...")
-    response = requests.get(raw_url, headers=headers, timeout=60)
-
-    if response.status_code == 200:
-        with open(filename, "wb") as f:
-            f.write(response.content)
-        print(f"Erfolgreich gespeichert unter: {filename}")
-    else:
-        print(f"❌ Fehler beim Download von ECDC: Status Code {response.status_code}")
+    for name, info in urls.items():
+        df = pd.read_csv(info["url"], sep=info["sep"])
+        if "Kalenderwoche" in df.columns:
+            kw_col = "Kalenderwoche"
+        elif "yearweek" in df.columns:
+                kw_col = "yearweek"
+        else:
+            print(f"{name}: Keine passende Kalenderwochen-Spalte gefunden")
+        df = df[df[kw_col] >= "2023-W01"]
+        df.to_csv(
+            os.path.join(OUTPUT_DIR, f"{name}.csv"),
+            index=False
+    )
+        print(f"{name} gespeichert: {len(df)} Zeilen")
 # ============================================================
 # Main
 # ============================================================

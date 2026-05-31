@@ -16,6 +16,7 @@ from pathlib import Path
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data"
 
 TICKERS = {
+    "EXV9_ETF": "EXV9.DE", #Zielvariable
     "Lufthansa": "LHA.DE",
     "Ryanair": "RYAAY",
     "Air France-KLM": "AF.PA",
@@ -285,6 +286,29 @@ def downloadGesundheitsdaten():
    df =pd.read_csv("./data/ARE-Inzidenz.tsv",sep="\t")
    df.to_csv("./data/ARE-Inzidenz.csv",index=False)
 
+
+def download_europe_health_data():
+    """
+    Lädt die wöchentlichen Inzidenzraten akuter Atemwegserkrankungen (ILIARIRates).
+    """
+    print("\n=== ECDC Europe Health Data Download ===")
+
+    raw_url = "https://raw.githubusercontent.com/EU-ECDC/Respiratory_viruses_weekly_data/main/data/ILIARIRates.csv"
+    filename = os.path.join(OUTPUT_DIR, "ECDC_Europa_Inzidenz.csv")
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    print("Lade ILIARIRates.csv von ECDC GitHub-Server...")
+    response = requests.get(raw_url, headers=headers, timeout=60)
+
+    if response.status_code == 200:
+        with open(filename, "wb") as f:
+            f.write(response.content)
+        print(f"Erfolgreich gespeichert unter: {filename}")
+    else:
+        print(f"❌ Fehler beim Download von ECDC: Status Code {response.status_code}")
 # ============================================================
 # Main
 # ============================================================
@@ -301,6 +325,8 @@ def main():
     download_google_rss_news()
     downloadWetter()
     #downloadGesundheitsdaten()
+    download_europe_health_data()
+
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")
 

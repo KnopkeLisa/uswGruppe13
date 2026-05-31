@@ -1,44 +1,44 @@
-# Vorhersage des globalen Tourismussektors durch kombinierte Datenströme
+# Vorhersage des europäischen Tourismussektors durch kombinierte Datenströme
 
 ## 1. Projektthema & Zielsetzung
-Dieses Projekt entwickelt ein KI-Modell (ein neuronales Netz), um die kurzfristige Kursentwicklung der weltweiten Reise- und Freizeitbranche vorherzusagen. 
+Dieses Projekt entwickelt ein KI-Modell (ein neuronales Netz), um die kurzfristige Kursentwicklung der europäischen Reise- und Freizeitbranche vorherzusagen. 
 
-Im Kern wollen wir herausfinden, ob eine KI durch die geschickte Verknüpfung von **klassischen Finanzmarktdaten** (wie Aktien- und Ölpreisen) mit **alternativen Datenquellen** (wie Wetterdaten, Google-Suchanfragen und Nachrichten-Stimmungen) einen Informationsvorsprung am Aktienmarkt erzielen kann.
+Im Kern untersuchen wir, ob eine KI durch die mathematische Verknüpfung von **klassischen europäischen Finanzmarktdaten** mit **lokalisierten, alternativen Datenquellen** (Wetter-Clustern, Google-Suchanfragen, Gesundheitsdaten und Medien-Stimmungen) einen Informationsvorsprung am Aktienmarkt erzielen kann. Der Fokus auf den europäischen Kontinent ermöglicht es uns, regionale Saisonalitäten, Ferienwellen und Wettereffekte präzise zu modellieren.
 
-*   **Vorhersage-Zeitraum:** 5 Handelstage in die Zukunft (Trendprognose für eine Woche).
-*   **Methodik:** Zeitreihen-Analyse unter Berücksichtigung von saisonalen Mustern und politischen Ereignissen.
-
----
-
-## 2. Die Zielvariable (Was wir vorhersagen)
-Um das Risiko von unvorhersehbaren Ereignissen bei einzelnen Unternehmen (wie z. B. ein plötzlicher Chef-Wechsel oder ein lokaler Skandal) zu minimieren, sagen wir keinen Einzelwert voraus, sondern einen großen Branchen-Index:
-
-*   **Zielvariable:** `EXV1.DE` (STOXX Global 1800 Travel & Leisure ETF)
-*   **Bedeutung:** Dieser ETF bündelt die größten und erfolgreichsten Konzerne der Welt aus den Bereichen Luftfahrt, Hotels, Buchungsplattformen und Kreuzfahrten. Er ist das perfekte Abbild für die wirtschaftliche Gesundheit der gesamten Tourismusbranche.
+*   **Untersuchungszeitraum:** 01.01.2023 bis 30.05.2026
+*   **Vorhersage-Zeitraum:** Exakt 5 Handelstage in die Zukunft (Trendprognose für eine Handelswoche).
+*   **Daten-Frequenz:** Täglich (1d)
 
 ---
 
-## 3. Eingabevariablen (Features)
-Unsere Datenmatrix setzt sich aus verschiedenen Bausteinen zusammen, die sich gegenseitig ergänzen:
+## 2. Die Zielvariable (Das Target $y$)
+Um das Risiko von unvorhersehbaren Ereignissen bei einzelnen Unternehmen zu minimieren, prognostiziert das Modell den führenden europäischen Branchen-Index:
 
-### A. Branchen- & Segment-Daten
-*   **Fluggesellschaften:** Der `JETS` ETF (U.S. Global Jets), um die weltweiten Trends und Kapazitäten im Flugverkehr zu erfassen.
-*   **Digitale Buchungsplattformen:** Die Aktienkurse von Marktführern wie `BKNG` (Booking Holdings), `ABNB` (Airbnb), `EXPE` (Expedia Group) und `TRIP` (TripAdvisor).
-*   **Massentourismus:** Die `TUI1.DE` Aktie (TUI AG) als Gradmesser für das klassische, preisbewusste Pauschalreise-Geschäft.
-*   **Luxustourismus:** Der `GLUX.PA` ETF (Amundi S&P Global Luxury), um die Entwicklung im Premium-Segment zu beobachten, da wohlhabende Kunden oft krisenresistenter sind.
-
-### B. Wirtschaftliche Treiber (Kosten- & Währungsfaktoren)
-*   **Sprit- & Energiekosten:** Die Rohölpreise `BZ=F` (Brent) und `CL=F` (WTI). Höhere Ölpreise bedeuten meist direkt höhere Kosten für Airlines und somit teurere Tickets.
-*   **US-Dollar-Stärke:** Der `DX-Y.NYB` (US-Dollar-Index), da Wechselkurse einen riesigen Einfluss darauf haben, wie attraktiv Fernreisen für Urlauber sind.
-
-### C. Alternative Daten (Reiselust & Stimmung)
-*   **Wetterdaten:** Täglich zusammengefasste Temperaturen aus wichtigen weltweiten Tourismus-Regionen (wie Mallorca, Orlando, Bangkok, Cancun, Kapstadt, Sydney), um kurzfristige, wetterbedingte Buchungswellen zu erkennen.
-*   **Google Trends (Die reale Nachfrage):** Das aktuelle Suchvolumen für die Begriffe `"book flight"` (Flug buchen) und `"book hotel"` (Hotel buchen) als direkter Frühindikator.
-*   **Nachrichten-Stimmung (Sentiment):** Ein automatisch berechneter Wert aus weltweiten Wirtschaftsmeldungen, der zeigt, ob gerade negative Themen (wie Zoll-Androhungen oder Streiks) oder positive Nachrichten (wie Visa-Erleichterungen) die Medien dominieren.
+*   **Zielvariable ($y$):** `EXV9.DE` (STOXX Europe 600 Travel & Leisure UCITS ETF)
+*   **Bedeutung:** Dieser Index beinhaltet die kapitalstärksten Unternehmen Europas aus den Segmenten Luftfahrt, Hotellerie, Gastronomie und Unterhaltung. Er bildet die aggregierte wirtschaftliche Entwicklung des europäischen Tourismussektors ab.
 
 ---
 
-## 4. Diskussion: Warum wir keine Krankheitsdaten (RKI) nutzen
-Wir haben im Team intensiv geprüft, ob wir Infektionsdaten (z. B. RKI-Daten zu Atemwegserkrankungen) einbauen sollten. Wir haben uns aus zwei logischen Gründen **dagegen** entschieden:
-1.  **Geografischer Widerspruch:** Die RKI-Daten bilden nur die Situation in Deutschland ab. Da unsere Zielvariable (`EXV1.DE`) aber ein weltweiter Index ist, macht es mathematisch keinen Sinn, ihn mit rein lokalen Krankheitswellen vorhersagen zu wollen.
-2.  **Fehlende Datenqualität:** Nach der akuten Corona-Phase werden internationale Infektionsdaten nicht mehr in der nötigen täglichen und standardisierten Form über Schnittstellen (APIs) bereitgestellt, die für unser Modell notwendig wäre.
+## 3. Eingabevariablen (Features $X$)
+Die Feature-Matrix ist durch das bestehende Datenbeschaffungs-Skript fest definiert und setzt sich aus den folgenden Dateien zusammen (siehe Struktur in 1.PNG und 2.PNG):
+
+### A. Finanzmarktdaten & Branchen-Segmente (`yfinance`)
+*   **Europäische Fluggesellschaften:** `LHA.DE` (Lufthansa), `RYAAY` (Ryanair), `AF.PA` (Air France-KLM) und `EZJ.L` (EasyJet) zur Abbildung des kontinentalen Linien- und Billigflugmarktes.
+*   **Digitale Buchungsplattformen & Tech:** `BKNG` (Booking Holdings), `ABNB` (Airbnb) und `EXPE` (Expedia) sowie der `AWAY` ETF (Global Travel Tech ETF).
+*   **Hotellerie & Mobilität:** `HLT` (Hilton Hotels), `MAR` (Marriott Hotels) und `UBER` (Uber) zur Erfassung von Unterkunft- und Transporttrends.
+*   **Branchen-Benchmarks (ETFs):** `JETS` (U.S. Global Jets ETF) und `PEJ` (Invesco Leisure and Entertainment ETF) als sektorübergreifende Kontrollvariablen.
+*   **Marktumfeld & Volatilität:** `^GDAXI` (DAX) als europäischer Leitindex und `^VIX` (CBOE Volatility Index) als Gradmesser für die allgemeine Nervosität am globalen Aktienmarkt.
+
+### B. Wirtschaftliche Treiber & Währungen
+*   **Energiekosten-Hebel:** `BZ=F` (Brent Crude Oil) und `CL=F` (WTI Crude Oil) zur Messung des direkten Kostendrucks durch Kerosinpreise.
+*   **Währungs-Hebel:** `EURUSD=X` (Euro/US-Dollar), `EURTRY=X` (Euro/Türkische Lira), `EURGBP=X` (Euro/Britisches Pfund) und `EURCHF=X` (Euro/Schweizer Franken), um die Attivitätsunterschiede europäischer Destinationen zu erfassen.
+*   **Makro-Inflation (`inflation.csv`):** Offizielle europäische Verbraucherpreisindizes aus der Eurostat-Datenbank (`prc_hicp_midx`). 
+    *   *Frequenz-Korrektur:* Da offizielle Inflationsdaten nur monatlich und zeitverzögert erscheinen, führt die Pipeline ein mathematisches **Upsampling auf tägliche Basis** (mittels linearer Interpolation und einem eingebauten Time-Lag von 15 Tagen) durch. Dies verhindert, dass das Modell mit Daten aus der Zukunft trainiert wird (*Data Leakage*).
+
+### C. Alternative Daten & Saisonalitäten
+*   **Wetterdaten (`wetter_openmeteo.csv`):** Täglich aggregierte Werte (Durchschnittstemperatur, Niederschlagssumme und Sonnenscheindauer) über die Open-Meteo-API für vier strategische europäische Knotenpunkte und Urlaubsregionen: **Berlin, Palma (Mallorca), Antalya und Rom**.
+*   **Digitale Nachfrage (`google_trends.csv`):** Suchvolumen für die Begriffe: `"Mallorca"`, `"wellness"`, `"airbnb"`, `"hotel"` und `"camping"`. (Wöchentliche Daten werden über einen *Forward-Fill* an die tägliche Aktienfrequenz angepasst).
+*   **Europäische Kalender-Effekte (`german_holidays_daily.csv`):** Um der europäischen Zielvariable gerecht zu werden, wurde die ursprüngliche rein deutsche Betrachtung im Code auf ein **aggregiertes europäisches Feiertags-Feature** (`holidays.EuropeanUnion`) angehoben. Es liefert einen gewichteten Aktivitäts-Index für Handels- und Reisetage in den europäischen Kernmärkten.
+*   **Gesundheitsdaten (`ARE-Inzidenz.csv` / `GrippeDaten.csv`):** Zeitreihen des Robert-Koch-Instituts (RKI) zu akuten Atemwegserkrankungen (ARE) und Influenza-Werten, um den Einfluss lokaler Krankheitswellen als Stichprobe für das mitteleuropäische Reiseverhalten zu testen.
+*   **Europäische Gesundheitsdaten (`ecdc_respiratory_data.csv`):** Die offiziellen Überwachungsdaten des **ECDC (European Centre for Disease Prevention and Control)** für akute Atemwegserkrankungen (Influenza und RSV) auf EU-Ebene. Da diese Daten wöchentlich erhoben werden, erfolgt in der Pipeline ein tägliches Upsampling (Interpolation), um den Einfluss kontinentaler Krankheitswellen auf die kurzfristige Reisenachfrage fehlerfrei zu messen.
+*   **Nachrichten-Sentiment (`google_news.csv`):** Täglich gecrawlte Schlagzeilen über den Google-News-RSS-Feed, basierend auf den risiko- und nachfragespezifischen Suchbegriffen: `"airport strike"`, `"flight cancellation"`, `"travel warning"`, `"tourism"` und `"hotel booking"`.

@@ -37,7 +37,8 @@ TICKERS = {
     "EUR_CHF": "EURCHF=X",
     "DAX": "^GDAXI",
     "VIX": "^VIX",
-    "AWAY-ETF": "AWAY"    
+    "AWAY-ETF": "AWAY",
+    "Europe600-ETF": "EXV9.DE"
 }
 
 START_DATE = "2023-01-01"

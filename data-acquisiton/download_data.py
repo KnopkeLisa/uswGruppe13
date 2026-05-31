@@ -17,6 +17,7 @@ OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data"
 
 TICKERS = {
     "EXV9_ETF": "EXV9.DE", #Zielvariable
+    "AWAY-ETF": "AWAY",
     "Lufthansa": "LHA.DE",
     "Ryanair": "RYAAY",
     "Air France-KLM": "AF.PA",
@@ -27,8 +28,8 @@ TICKERS = {
     "Hilton_Hotels": "HLT",
     "Marriott_Hotels":"MAR",
     "JETS": "JETS",
-    "PEJ": "PEJ",
     "Uber":"UBER",
+    "PrimeEnergyOil_Gas": "PEJ",
     "BrentOil": "BZ=F",
     "WTIOil": "CL=F",
     "EUR_USD": "EURUSD=X",
@@ -36,8 +37,8 @@ TICKERS = {
     "EUR_GPB": "EURGBP=X",
     "EUR_CHF": "EURCHF=X",
     "DAX": "^GDAXI",
-    "VIX": "^VIX",
-    "AWAY-ETF": "AWAY"
+    "VIX": "^VIX"
+    
 }
 
 START_DATE = "2023-01-01"
@@ -58,9 +59,7 @@ def download_stock_data():
     print("\n=== Yahoo Finance Download ===\n")
 
     for name, ticker in TICKERS.items():
-
         print(f"Lade {name} ({ticker})...")
-
         df = yf.download(
             ticker,
             start=START_DATE,
@@ -69,12 +68,10 @@ def download_stock_data():
             auto_adjust=True,
             progress=False
         )
-
         filename = os.path.join(
             OUTPUT_DIR,
             f"{name}.csv"
         )
-
         df.to_csv(filename)
 
 
@@ -91,12 +88,10 @@ def download_google_trends():
     print("\n=== Google Trends Download ===")
 
     pytrends = TrendReq(hl="de-DE")
-
     pytrends.build_payload(
         ["Mallorca", "wellness", "airbnb","hotel","camping"],
         timeframe=f"{START_DATE} {END_DATE}"
     )
-
     df = pytrends.interest_over_time()
     df = df.drop(columns=["isPartial"])
 
@@ -104,7 +99,6 @@ def download_google_trends():
         OUTPUT_DIR,
         "google_trends.csv"
     )
-
     df.to_csv(filename)
 
 # ============================================================
@@ -121,7 +115,6 @@ def download_holidays():
     de_holidays = holidays.Germany(
         years=[2023, 2024, 2025, 2026]
     )
-
     # Alle Tage erzeugen
     daily = pd.DataFrame({
         "date": pd.date_range(
@@ -130,25 +123,20 @@ def download_holidays():
             freq="D"
         )
     })
-
     # Standard = kein Feiertag
     daily["holiday"] = 0
-
     # Feiertage markieren
     holiday_dates = pd.to_datetime(
         list(de_holidays.keys())
     )
-
     daily.loc[
         daily["date"].isin(holiday_dates),
         "holiday"
     ] = 1
-
     filename = os.path.join(
         OUTPUT_DIR,
         "german_holidays_daily.csv"
     )
-
     daily.to_csv(
         filename,
         index=False
@@ -220,7 +208,6 @@ def download_gdelt_news():
         OUTPUT_DIR,
         "gdelt_tourism_news.csv"
     )
-
     timeline.to_csv(filename, mode="a", header=not os.path.exists(filename), index=False)
 
 def download_google_rss_news():
@@ -249,14 +236,14 @@ def download_google_rss_news():
                 "title": entry.title,
                 "link": entry.link
             })
-
+            
+    print(f"Insgesamt gespeichert: {len(rows)}")
     df = pd.DataFrame(rows)
 
     csv_path = os.path.join(
         OUTPUT_DIR,
         "google_news.csv"
     )
-
     df.to_csv(
         csv_path,
         index=False,
@@ -291,6 +278,7 @@ def downloadWetter():
         df = pd.DataFrame(js)
         df["city"] = city
         rows.append(df)
+        print(f"{city} heruntergeladen: {len(df)} Zeilen")
     pd.concat(rows).to_csv(
         os.path.join(OUTPUT_DIR,"wetter_openmeteo.csv"),
         index=False
@@ -302,6 +290,8 @@ def downloadWetter():
 
 
 def download_europe_health_data():
+
+    print("\n=== Health Data Download ===")
     urls = {
     "grippeweb": {
         "url": "https://raw.githubusercontent.com/robert-koch-institut/GrippeWeb_Daten_des_Wochenberichts/main/GrippeWeb_Daten_des_Wochenberichts.tsv",
@@ -316,7 +306,6 @@ def download_europe_health_data():
         "sep": ","
     }
 }
-
     for name, info in urls.items():
         df = pd.read_csv(info["url"], sep=info["sep"])
         if "Kalenderwoche" in df.columns:
@@ -328,7 +317,7 @@ def download_europe_health_data():
             os.path.join(OUTPUT_DIR, f"{name}.csv"),
             index=False
     )
-        print(f"{name} gespeichert: {len(df)} Zeilen")
+        print(f"{name} heruntergeladen: {len(df)} Zeilen")
 # ============================================================
 # Main
 # ============================================================
@@ -339,13 +328,13 @@ def main():
 
     #download_stock_data()
     #download_google_trends()
+    #download_google_rss_news()
     #download_holidays()
     #download_inflation()
-    download_gdelt_news()
-    #download_google_rss_news()
     #downloadWetter()
     #download_europe_health_data()
 
+    #download_gdelt_news() #--> Führt des öfteren zu Fehlern, funktioniert aber
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")
 

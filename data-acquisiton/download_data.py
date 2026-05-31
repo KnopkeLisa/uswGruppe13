@@ -281,10 +281,20 @@ def downloadWetter():
 # ============================================================
 
 def downloadGesundheitsdaten():
-   #https://github.com/robert-koch-institut/GrippeWeb_Daten_des_Wochenberichts
-   #https://github.com/robert-koch-institut/ARE-Konsultationsinzidenz/blob/main/ARE-Konsultationsinzidenz.tsv
-   df =pd.read_csv("./data/ARE-Inzidenz.tsv",sep="\t")
-   df.to_csv("./data/ARE-Inzidenz.csv",index=False)
+    urls = {
+        "grippeweb": "https://raw.githubusercontent.com/robert-koch-institut/GrippeWeb_Daten_des_Wochenberichts/main/GrippeWeb_Daten_des_Wochenberichts.tsv",
+        "are_konsultationsinzidenz": "https://raw.githubusercontent.com/robert-koch-institut/ARE-Konsultationsinzidenz/main/ARE-Konsultationsinzidenz.tsv"
+    }
+
+    for name, url in urls.items():
+            df = pd.read_csv(url, sep="\t")
+            df = df[df["Kalenderwoche"] >= "2023-W01"]
+            df.to_csv(
+            os.path.join(OUTPUT_DIR, f"{name}.csv"),
+            index=False
+        )
+
+    print(f"{name} gespeichert: {len(df)} Zeilen")
 
 
 def download_europe_health_data():
@@ -317,15 +327,15 @@ def main():
 
     print("Starte Datenbeschaffung!")
 
-    download_stock_data()
-    download_google_trends()
-    download_holidays()
-    download_inflation()
+    #download_stock_data()
+    #download_google_trends()
+    #download_holidays()
+    #download_inflation()
     #download_gdelt_news()
-    download_google_rss_news()
-    downloadWetter()
-    #downloadGesundheitsdaten()
-    download_europe_health_data()
+    #download_google_rss_news()
+    #downloadWetter()
+    downloadGesundheitsdaten()
+    #download_europe_health_data()
 
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")

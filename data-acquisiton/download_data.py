@@ -164,7 +164,27 @@ def download_inflation():
     und speichert diese als CSV.
     """
     print("\n=== Inflation Data Download ===")
+
+    wanted_coicop = [
+    "CP00",  # Gesamtinflation
+    "CP01",  # Lebensmittel
+    "CP04",  # Wohnen, Energie
+    "CP07",  # Verkehr
+    "CP09",  # Freizeit und Kultur
+    "CP11",  # Gaststätten & Beherbergung
+    "CP12"   # Sonstige Dienstleistungen
+]
     df = eurostat.get_data_df("prc_hicp_midx")
+
+    df = df[
+    (df["geo\\TIME_PERIOD"] == "EA20") & #20 Euro Länder
+    (df["coicop"].isin(wanted_coicop))
+]
+    df = pd.concat([
+    df.iloc[:, :4],
+    df.iloc[:, 328:]
+    ], axis=1)
+
     df.to_csv(
     os.path.join(OUTPUT_DIR, "inflation.csv"),
     index=False)
@@ -303,8 +323,6 @@ def download_europe_health_data():
             kw_col = "Kalenderwoche"
         elif "yearweek" in df.columns:
                 kw_col = "yearweek"
-        else:
-            print(f"{name}: Keine passende Kalenderwochen-Spalte gefunden")
         df = df[df[kw_col] >= "2023-W01"]
         df.to_csv(
             os.path.join(OUTPUT_DIR, f"{name}.csv"),
@@ -322,11 +340,11 @@ def main():
     #download_stock_data()
     #download_google_trends()
     #download_holidays()
-    #download_inflation()
+    download_inflation()
     #download_gdelt_news()
     #download_google_rss_news()
     #downloadWetter()
-    download_europe_health_data()
+    #download_europe_health_data()
 
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")

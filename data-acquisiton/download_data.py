@@ -280,22 +280,6 @@ def downloadWetter():
 # Gesundheitsdaten
 # ============================================================
 
-def downloadGesundheitsdaten():
-    urls = {
-        "grippeweb": "https://raw.githubusercontent.com/robert-koch-institut/GrippeWeb_Daten_des_Wochenberichts/main/GrippeWeb_Daten_des_Wochenberichts.tsv",
-        "are_konsultationsinzidenz": "https://raw.githubusercontent.com/robert-koch-institut/ARE-Konsultationsinzidenz/main/ARE-Konsultationsinzidenz.tsv"
-    }
-
-    for name, url in urls.items():
-            df = pd.read_csv(url, sep="\t")
-            df = df[df["Kalenderwoche"] >= "2023-W01"]
-            df.to_csv(
-            os.path.join(OUTPUT_DIR, f"{name}.csv"),
-            index=False
-        )
-
-    print(f"{name} gespeichert: {len(df)} Zeilen")
-
 
 def download_europe_health_data():
     urls = {
@@ -342,8 +326,7 @@ def main():
     #download_gdelt_news()
     #download_google_rss_news()
     #downloadWetter()
-    downloadGesundheitsdaten()
-    #download_europe_health_data()
+    download_europe_health_data()
 
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")

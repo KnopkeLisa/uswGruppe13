@@ -102,7 +102,7 @@ def download_google_trends():
     df.to_csv(filename)
 
 # ============================================================
-# Feiertage
+# Feiertage und Schulferien
 # ============================================================
 
 def download_holidays():
@@ -141,6 +141,69 @@ def download_holidays():
         filename,
         index=False
     )
+
+    def download_european_school_vacations():
+        """
+        Generiert ein tägliches Raster basierend auf START_DATE und END_DATE
+        und teilt die europäischen Ferien in feste Blöcke (0/1) und fließende
+        Wellen (Prozentwerte) auf.
+        """
+        print("\n=== Generating European School Vacation Indicators ===")
+
+        daily = pd.DataFrame({
+            "date": pd.date_range(start=START_DATE, end=END_DATE, freq="D")
+        })
+
+        daily["month"] = daily["date"].dt.month
+        daily["day"] = daily["date"].dt.day
+        daily["year"] = daily["date"].dt.year
+
+        daily["vacation_christmas_block"] = 0.0
+        daily["vacation_easter_block"] = 0.0
+        daily["vacation_summer_wave"] = 0.0
+        daily["vacation_autumn_wave"] = 0.0
+        daily["vacation_winter_ski_wave"] = 0.0
+
+
+        # DIE FESTEN BLOCK-FERIEN (Wert 0.0 oder 1.0)
+
+        christmas_condition = (
+                ((daily["month"] == 12) & (daily["day"] >= 21)) |
+                ((daily["month"] == 1) & (daily["day"] <= 7))
+        )
+        daily.loc[christmas_condition, "vacation_christmas_block"] = 1.0
+
+        easter_conditions = (
+                ((daily["year"] == 2023) & (daily["month"] == 4) & (daily["day"].between(1, 16))) |  # Ostern: 09.04.23
+                ((daily["year"] == 2024) & (daily["month"] == 3) & (daily["day"] >= 24)) |  # Ostern: 31.03.24
+                ((daily["year"] == 2024) & (daily["month"] == 4) & (daily["day"] <= 7)) |
+                ((daily["year"] == 2025) & (daily["month"] == 4) & (daily["day"].between(13, 27))) |  # Ostern: 20.04.25
+                ((daily["year"] == 2026) & (daily["month"] == 3) & (daily["day"] >= 29)) |  # Ostern: 05.04.26
+                ((daily["year"] == 2026) & (daily["month"] == 4) & (daily["day"] <= 12))
+        )
+        daily.loc[easter_conditions, "vacation_easter_block"] = 1.0
+
+        # DIE FLIESSENDEN WELLEN-FERIEN (Prozentwerte)
+
+        # Sommerferien-Welle
+        daily.loc[daily["month"] == 6, "vacation_summer_wave"] = 0.3
+        # Juli & August: Absolute Kernzeit, ganz Europa hat Ferien -> Peak
+        daily.loc[daily["month"].isin([7, 8]), "vacation_summer_wave"] = 1.0
+        # September: Spätzünder & letzte Staffeln -> Welle flacht ab
+        daily.loc[daily["month"] == 9, "vacation_summer_wave"] = 0.2
+
+        # Herbstferien-Welle
+        daily.loc[daily["month"] == 10, "vacation_autumn_wave"] = 0.6
+        daily.loc[((daily["month"] == 11) & (daily["day"] <= 3)), "vacation_autumn_wave"] = 0.2
+
+        #Winter-/Skiferien-Welle
+        daily.loc[daily["month"] == 2, "vacation_winter_ski_wave"] = 0.5
+
+        daily = daily.drop(columns=["month", "day", "year"])
+
+        filename = os.path.join(OUTPUT_DIR, "european_vacations_daily.csv")
+        daily.to_csv(filename, index=False)
+        print(f"✓ Schulferien-Matrix erfolgreich gespeichert unter: {filename}")
 
 # ============================================================
 # Inflation
@@ -330,6 +393,7 @@ def main():
     #download_google_trends()
     #download_google_rss_news()
     #download_holidays()
+    #download_european_school_vacations()
     #download_inflation()
     #downloadWetter()
     #download_europe_health_data()

@@ -142,7 +142,7 @@ def download_holidays():
         index=False
     )
 
-    def download_european_school_vacations():
+def download_european_school_vacations():
         """
         Generiert ein tägliches Raster basierend auf START_DATE und END_DATE
         und teilt die europäischen Ferien in feste Blöcke (0/1) und fließende

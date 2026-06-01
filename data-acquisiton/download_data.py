@@ -257,8 +257,8 @@ def download_gdelt_news():
 
     filters = Filters(
         keyword="Lufthansa",
-        start_date="2026-04-01",
-        end_date="2026-05-01"
+        start_date="2026-05-01",
+        end_date="2026-05-30"
     )
 
     timeline = gd.timeline_search(
@@ -323,10 +323,21 @@ def downloadWetter():
     print("\n=== Weather Data Download ===")
     # Open-Meteo historische Wetterdaten; Beispiel: Berlin, Palma, Antalya, Rom
     cities = {
-        "Berlin": (52.52, 13.41),
-        "Palma": (39.57, 2.65),
-        "Antalya": (36.90, 30.71),
-        "Rom": (41.90, 12.50),
+         # Städtereisen
+    "Berlin": (52.52, 13.41),
+    "Paris": (48.86, 2.35),
+    "Amsterdam": (52.37, 4.90),
+    "Prag": (50.08, 14.44),
+    "Wien": (48.21, 16.37),
+
+    # Kultur-/Städtetourismus
+    "Rom": (41.90, 12.50),
+    "Madrid": (40.42, -3.70),
+
+    # Strandtourismus
+    "Palma": (39.57, 2.65),
+    "Barcelona": (41.39, 2.17),
+    "Antalya": (36.90, 30.71),
     }
     rows = []
     for city, (lat, lon) in cities.items():

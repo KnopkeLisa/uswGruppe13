@@ -86,21 +86,52 @@ for datei, (datums_spalte, trenner, is_weekly) in langzeit_dateien.items():
     pfad = f"data/{datei}"
     if os.path.exists(pfad):
         try:
-            df_temp = pd.read_csv(pfad, sep=trenner)
+            # Spezialbehandlung für inflation.csv (Eurostat-Format)
+            if datei == 'inflation.csv':
+                df_temp = pd.read_csv(pfad, sep=trenner)
 
-            if is_weekly:
-                df_temp[datums_spalte] = df_temp[datums_spalte].astype(str)
-                df_temp[datums_spalte] = df_temp[datums_spalte].apply(
-                    lambda x: x + '-1' if 'W' in x and len(x) == 8 else x
-                )
-                df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], format='%G-W%V-%u', errors='coerce')
+                # Wähle nur Allgemeine Inflation (CP00) für Euro-Raum (EA20)
+                df_inflation = df_temp[(df_temp['coicop'] == 'CP00') & (df_temp['geo\\TIME_PERIOD'] == 'EA20')].copy()
+
+                if not df_inflation.empty:
+                    # Konvertiere Monatsspalten zu Reihen
+                    inflation_data = []
+                    for col in df_inflation.columns:
+                        if col.startswith('20') and len(col) == 7:  # Format: YYYY-MM
+                            # WICHTIG: Daten-Leakage vermeiden!
+                            # Inflationsdaten für z.B. Mai werden erst im Juni verfügbar
+                            # Daher verschieben wir um einen Monat nach vorne
+                            datum = pd.to_datetime(col + '-01', format='%Y-%m-%d')
+                            datum = datum + pd.DateOffset(months=1)  # Um einen Monat verschieben
+                            wert = df_inflation[col].values[0]
+                            inflation_data.append({'Datum': datum, 'Inflation': wert})
+
+                    df_temp = pd.DataFrame(inflation_data)
+                    df_temp.set_index('Datum', inplace=True)
+                    df_temp.index = df_temp.index.normalize()
+                    df_temp.index.name = 'Datum'
+
+                    # Resample auf täglich mit forward fill UND backward fill
+                    # (um Lücken am Anfang zu füllen)
+                    df_temp = df_temp.resample('D').ffill()
+                    df_temp = df_temp.bfill()  # Backward fill für Lücken am Anfang
+                    df_master = df_master.join(df_temp, how='left')
             else:
-                df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], errors='coerce')
+                df_temp = pd.read_csv(pfad, sep=trenner)
 
-            df_temp.set_index(datums_spalte, inplace=True)
-            df_temp.index.name = 'Datum'
+                if is_weekly:
+                    df_temp[datums_spalte] = df_temp[datums_spalte].astype(str)
+                    df_temp[datums_spalte] = df_temp[datums_spalte].apply(
+                        lambda x: x + '-1' if 'W' in x and len(x) == 8 else x
+                    )
+                    df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], format='%G-W%V-%u', errors='coerce')
+                else:
+                    df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], errors='coerce')
 
-            df_master = df_master.join(df_temp, how='left')
+                df_temp.set_index(datums_spalte, inplace=True)
+                df_temp.index.name = 'Datum'
+
+                df_master = df_master.join(df_temp, how='left')
         except Exception as e:
             print(f"  -> Warnung bei {datei}: {e}")
 
@@ -109,6 +140,13 @@ for datei, (datums_spalte, trenner, is_weekly) in langzeit_dateien.items():
 # ---------------------------------------------------------
 print("Strecke Wochen/Monatswerte auf die fehlenden Handelstage (Forward-Fill)...")
 df_master.ffill(inplace=True)
+
+# ---------------------------------------------------------
+# 5b. INFLATION BACKWARD-FILL (FÜR LÜCKEN AM ANFANG)
+# ---------------------------------------------------------
+if 'Inflation' in df_master.columns:
+    print("Fülle Inflation-Lücken am Anfang (Backward-Fill)...")
+    df_master['Inflation'] = df_master['Inflation'].bfill()
 
 # ---------------------------------------------------------
 # 6. FINALES SPEICHERN

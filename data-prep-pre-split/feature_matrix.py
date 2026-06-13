@@ -3,8 +3,8 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
-RAW_FILE = BASE_DIR / "finale_matrix.csv"
-RETURNS_FILE = BASE_DIR / "finale_matrix_returns.csv"
+RAW_FILE = BASE_DIR / "raw-data-matrix.csv"
+RETURNS_FILE = BASE_DIR / "returns_matrix.csv"
 OUTPUT_FILE = BASE_DIR / "feature_matrix.csv"
 
 print("Lade Rohdaten-Matrix...")

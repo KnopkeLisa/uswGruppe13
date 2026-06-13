@@ -1,6 +1,6 @@
 import pandas as pd
 
-df = pd.read_csv("./finale_matrix.csv")
+df = pd.read_csv("./data-prep-pre-split/raw-data-matrix.csv")
 
 def create_return_features(df, columns):
     """
@@ -44,7 +44,7 @@ return_columns = [
 df_returns = create_return_features(df, return_columns)
 
 df_returns.to_csv(
-    "finale_matrix_returns.csv",
+    "./data-prep-pre-split/returns_matrix.csv",
     index=False,
     float_format="%.2f"
 )

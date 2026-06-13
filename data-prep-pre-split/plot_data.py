@@ -7,7 +7,7 @@ sns.set_theme(style="whitegrid", context="talk")
 
 print("Lade finale Matrix für die Plots...")
 # Wir laden unsere frisch gemergte Tabelle
-df = pd.read_csv('./data-prep-pre-split/finale_matrix.csv', index_col='Datum', parse_dates=True)
+df = pd.read_csv('./data-prep-pre-split/raw-data-matrix.csv', index_col='Datum', parse_dates=True)
 
 # ---------------------------------------------------------
 # PLOT 1: Die Korrelations-Heatmap (Der absolute Prof-Liebling)

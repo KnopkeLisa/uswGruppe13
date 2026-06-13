@@ -42,8 +42,13 @@ df["target_trend_5d"] = (
 df["Datum"] = df["Datum"].dt.date
 
 # NaN entfernen
-print("Entferne NaN-Werte...")
-df = df.dropna()
+required_cols = [
+    "Datum",
+    "target_return_5d",
+    "target_trend_5d"
+]
+
+df = df.dropna(subset=required_cols)
 
 # Speichern
 df.to_csv(

@@ -1,158 +1,58 @@
 import pandas as pd
-import os
+from pathlib import Path
 
-print("Starte den finalen und kompletten Daten-Merge...")
+BASE_DIR = Path(__file__).resolve().parent
 
-# ---------------------------------------------------------
-# 1. DAS TÄGLICHE RÜCKGRAT: Zielvariable (EXV9 ETF)
-# ---------------------------------------------------------
-df_master = pd.read_csv('data/EXV9_ETF.csv', header=[0, 1], index_col=0, parse_dates=True)
-df_master = df_master['Close'].copy()
-df_master.columns = ['EXV9_ETF_Kurs']
-df_master.index.name = 'Datum'
+RAW_FILE = BASE_DIR / "finale_matrix.csv"
+RETURNS_FILE = BASE_DIR / "finale_matrix_returns.csv"
+OUTPUT_FILE = BASE_DIR / "feature_matrix.csv"
 
-# ---------------------------------------------------------
-# 2. TÄGLICHE FINANZDATEN
-# ---------------------------------------------------------
-yfinance_dateien = [
-    'DAX.csv', 'VIX.csv', 'BrentOil.csv', 'WTIOil.csv',
-    'EUR_USD.csv', 'EUR_CHF.csv', 'EUR_GPB.csv', 'EUR_TRY.csv',
-    'Lufthansa.csv', 'Ryanair.csv', 'EasyJet.csv', 'Air France-KLM.csv',
-    'Booking.csv', 'Expedia.csv', 'Uber.csv', 'Airbnb.csv',
-    'PrimeEnergyOil_Gas.csv', 'Marriott_Hotels.csv', 'Hilton_Hotels.csv', 'AWAY-ETF.csv'
-]
+print("Lade Rohdaten-Matrix...")
+df_raw = pd.read_csv(RAW_FILE)
 
-print("Füge tägliche Finanzdaten hinzu...")
-for datei in yfinance_dateien:
-    pfad = f"data/{datei}"
-    if os.path.exists(pfad):
-        df_temp = pd.read_csv(pfad, header=[0, 1], index_col=0, parse_dates=True)
-        df_temp = df_temp['Close'].copy()
-        df_temp.columns = [datei.replace('.csv', '_Kurs')]
-        df_temp.index.name = 'Datum'
-        df_master = df_master.join(df_temp, how='left')
+print("Lade Return-Matrix...")
+df_returns = pd.read_csv(RETURNS_FILE)
 
-# ---------------------------------------------------------
-# 3. TÄGLICHE MAKRO- UND NEWS-DATEN (INKL. SENTIMENT!)
-# ---------------------------------------------------------
-taegliche_dateien = {
-    'gdelt_tourism_news.csv': ('datetime', ','),
-    'google_news_sentiment.csv': ('date', ','),
-    'google_trends.csv': ('date', ','),
-    'wetter_openmeteo.csv': ('date', ','),
-    'european_vacations_daily.csv': ('date', ','),
-    'german_holidays_daily.csv': ('date', ',')
-}
+# Datum vereinheitlichen
+df_raw["Datum"] = pd.to_datetime(df_raw["Datum"])
+df_returns["Datum"] = pd.to_datetime(df_returns["Datum"])
 
-print("Füge tägliche Makro-, News- und Feriendaten hinzu...")
-for datei, (datums_spalte, trenner) in taegliche_dateien.items():
-    pfad = f"data/{datei}"
-    if os.path.exists(pfad):
-        try:
-            # 1. Datei laden, OHNE das Datum direkt als Index zu blockieren
-            df_temp = pd.read_csv(pfad, sep=trenner)
+# Rohdaten + Returns zusammenführen
+print("Merge Rohdaten + Return-Features...")
+df = pd.merge(
+    df_raw,
+    df_returns,
+    on="Datum",
+    how="inner"
+)
 
-            # 2. Uhrzeit-Falle fixen: Alle Stunden/Minuten rigoros abschneiden
-            df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], errors='coerce').dt.normalize()
+# Target erstellen: EXV9-Rendite in 5 Handelstagen
+print("Erzeuge Target Variable...")
 
-            # 3. GDELT-Fix: Falls es mehrere Einträge an einem Tag gibt, Durchschnitt bilden
-            numerische_spalten = df_temp.select_dtypes(include='number').columns
-            df_temp = df_temp.groupby(datums_spalte)[numerische_spalten].mean()
-            df_temp.index.name = 'Datum'
+df["target_return_5d"] = (
+    (df["EXV9_ETF_Kurs"].shift(-5) / df["EXV9_ETF_Kurs"]) - 1
+) * 100
 
-            # 4. Wochenend-Falle fixen (Speziell für Google Trends)
-            # Wenn Daten nur am Sonntag vorliegen, strecken wir sie BEVOR die Börsentage gefiltert werden
-            if datei == 'google_trends.csv':
-                df_temp = df_temp.resample('D').ffill()
+# Klassifikations-Target: steigt / fällt
+df["target_trend_5d"] = (
+    df["target_return_5d"] > 0
+).astype(int)
 
-            # 5. An die große Master-Tabelle ankleben
-            df_master = df_master.join(df_temp, how='left')
+# Optional: Datum wieder schöner speichern
+df["Datum"] = df["Datum"].dt.date
 
-        except Exception as e:
-            print(f"  -> Warnung bei {datei}: {e}")
+# NaN entfernen
+print("Entferne NaN-Werte...")
+df = df.dropna()
 
-# ---------------------------------------------------------
-# 4. WÖCHENTLICHE & MONATLICHE DATEN (MIT LÜCKENFÜLLER)
-# ---------------------------------------------------------
-langzeit_dateien = {
-    'inflation.csv': ('date', ',', False),
-    'ECDC_Europa_Inzidenz.csv': ('date', ',', True),
-    'are_konsultationsinzidenz.csv': ('date', ',', True),
-    'grippeweb.csv': ('date', ',', True)
-}
+# Speichern
+df.to_csv(
+    OUTPUT_FILE,
+    index=False,
+    float_format="%.2f"
+)
 
-print("Passe wöchentliche/monatliche Daten an das tägliche Raster an...")
-for datei, (datums_spalte, trenner, is_weekly) in langzeit_dateien.items():
-    pfad = f"data/{datei}"
-    if os.path.exists(pfad):
-        try:
-            # Spezialbehandlung für inflation.csv (Eurostat-Format)
-            if datei == 'inflation.csv':
-                df_temp = pd.read_csv(pfad, sep=trenner)
-
-                # Wähle nur Allgemeine Inflation (CP00) für Euro-Raum (EA20)
-                df_inflation = df_temp[(df_temp['coicop'] == 'CP00') & (df_temp['geo\\TIME_PERIOD'] == 'EA20')].copy()
-
-                if not df_inflation.empty:
-                    # Konvertiere Monatsspalten zu Reihen
-                    inflation_data = []
-                    for col in df_inflation.columns:
-                        if col.startswith('20') and len(col) == 7:  # Format: YYYY-MM
-                            # WICHTIG: Daten-Leakage vermeiden!
-                            # Inflationsdaten für z.B. Mai werden erst im Juni verfügbar
-                            # Daher verschieben wir um einen Monat nach vorne
-                            datum = pd.to_datetime(col + '-01', format='%Y-%m-%d')
-                            datum = datum + pd.DateOffset(months=1)  # Um einen Monat verschieben
-                            wert = df_inflation[col].values[0]
-                            inflation_data.append({'Datum': datum, 'Inflation': wert})
-
-                    df_temp = pd.DataFrame(inflation_data)
-                    df_temp.set_index('Datum', inplace=True)
-                    df_temp.index = df_temp.index.normalize()
-                    df_temp.index.name = 'Datum'
-
-                    # Resample auf täglich mit forward fill UND backward fill
-                    # (um Lücken am Anfang zu füllen)
-                    df_temp = df_temp.resample('D').ffill()
-                    df_temp = df_temp.bfill()  # Backward fill für Lücken am Anfang
-                    df_master = df_master.join(df_temp, how='left')
-            else:
-                df_temp = pd.read_csv(pfad, sep=trenner)
-
-                if is_weekly:
-                    df_temp[datums_spalte] = df_temp[datums_spalte].astype(str)
-                    df_temp[datums_spalte] = df_temp[datums_spalte].apply(
-                        lambda x: x + '-1' if 'W' in x and len(x) == 8 else x
-                    )
-                    df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], format='%G-W%V-%u', errors='coerce')
-                else:
-                    df_temp[datums_spalte] = pd.to_datetime(df_temp[datums_spalte], errors='coerce')
-
-                df_temp.set_index(datums_spalte, inplace=True)
-                df_temp.index.name = 'Datum'
-
-                df_master = df_master.join(df_temp, how='left')
-        except Exception as e:
-            print(f"  -> Warnung bei {datei}: {e}")
-
-# ---------------------------------------------------------
-# 5. LÜCKEN FÜLLEN (FORWARD-FILL)
-# ---------------------------------------------------------
-print("Strecke Wochen/Monatswerte auf die fehlenden Handelstage (Forward-Fill)...")
-df_master.ffill(inplace=True)
-
-# ---------------------------------------------------------
-# 5b. INFLATION BACKWARD-FILL (FÜR LÜCKEN AM ANFANG)
-# ---------------------------------------------------------
-if 'Inflation' in df_master.columns:
-    print("Fülle Inflation-Lücken am Anfang (Backward-Fill)...")
-    df_master['Inflation'] = df_master['Inflation'].bfill()
-
-# ---------------------------------------------------------
-# 6. FINALES SPEICHERN
-# ---------------------------------------------------------
-ausgabe = 'data-prep-pre-split/finale_matrix.csv'
-df_master.to_csv(ausgabe)
-
-print(f"\n LOGISCHER MERGE ERFOLGREICH! '{ausgabe}' wurde erstellt.")
-print(f"Die Matrix hat {df_master.shape[0]} tägliche Zeilen und {df_master.shape[1]} Features.")
+print("Feature Matrix erfolgreich erstellt.")
+print(f"Datei: {OUTPUT_FILE}")
+print(f"Zeilen: {df.shape[0]}")
+print(f"Spalten: {df.shape[1]}")

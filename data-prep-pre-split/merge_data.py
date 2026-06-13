@@ -151,8 +151,8 @@ if 'Inflation' in df_master.columns:
 # ---------------------------------------------------------
 # 6. FINALES SPEICHERN
 # ---------------------------------------------------------
-ausgabe = 'finale_matrix.csv'
+ausgabe = 'data-prep-pre-split/finale_matrix.csv'
 df_master.to_csv(ausgabe)
 
-print(f"\n✅ LOGISCHER MERGE ERFOLGREICH! '{ausgabe}' wurde erstellt.")
+print(f"\n LOGISCHER MERGE ERFOLGREICH! '{ausgabe}' wurde erstellt.")
 print(f"Die Matrix hat {df_master.shape[0]} tägliche Zeilen und {df_master.shape[1]} Features.")

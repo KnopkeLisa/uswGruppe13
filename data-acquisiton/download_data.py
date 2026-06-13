@@ -90,7 +90,7 @@ def download_google_trends():
     pytrends = TrendReq(hl="de-DE")
     pytrends.build_payload(
         ["Mallorca", "wellness", "airbnb","hotel","camping"],
-        timeframe=f"{START_DATE} {END_DATE}"
+        timeframe= f"{START_DATE} {END_DATE}"
     )
     df = pytrends.interest_over_time()
     df = df.drop(columns=["isPartial"])

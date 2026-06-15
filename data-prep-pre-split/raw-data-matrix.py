@@ -38,7 +38,6 @@ for datei in yfinance_dateien:
 taegliche_dateien = {
     'google_news_sentiment.csv': ('date', ','),
     'google_trends.csv': ('date', ','),
-    'wetter_openmeteo.csv': ('date', ','),
     'european_vacations_daily.csv': ('date', ','),
     'german_holidays_daily.csv': ('date', ',')
 }
@@ -255,6 +254,140 @@ if os.path.exists(pfad):
 else:
     print("  -> ECDC_Europa_Inzidenz.csv nicht gefunden")
 
+
+
+# ---------------------------------------------------------
+# WETTERDATEN (STÄDTE -> AGGREGIERTE WETTER-FEATURES)
+# ---------------------------------------------------------
+
+print("Füge aggregierte Wetterdaten hinzu...")
+
+pfad = "data/wetter_openmeteo.csv"
+
+if os.path.exists(pfad):
+    try:
+        df_weather = pd.read_csv(pfad, sep=",")
+
+        # Datum vereinheitlichen
+        df_weather["Datum"] = pd.to_datetime(
+            df_weather["time"],
+            errors="coerce"
+        ).dt.normalize()
+
+        # Städtegruppen
+        central_cities = [
+            "Berlin",
+            "Paris",
+            "Amsterdam",
+            "Prag",
+            "Wien"
+        ]
+
+        holiday_cities = [
+            "Rom",
+            "Madrid",
+            "Barcelona",
+            "Palma",
+            "Antalya"
+        ]
+
+        # Nur relevante Städte behalten
+        df_weather = df_weather[
+            df_weather["city"].isin(
+                central_cities + holiday_cities
+            )
+        ].copy()
+
+        # Gruppe zuweisen
+        df_weather["weather_group"] = df_weather["city"].apply(
+            lambda x: (
+                "CentralEurope"
+                if x in central_cities
+                else "HolidayDestination"
+            )
+        )
+
+        # Sonnenstunden von Sekunden auf Stunden umrechnen
+        df_weather["sunshine_hours"] = (
+            df_weather["sunshine_duration"] / 3600
+        )
+
+        # Durchschnitt pro Tag und Gruppe bilden
+        df_weather_grouped = (
+            df_weather
+            .groupby(
+                ["Datum", "weather_group"]
+            )
+            .agg({
+                "temperature_2m_mean": "mean",
+                "sunshine_hours": "mean",
+                "precipitation_sum": "mean"
+            })
+            .reset_index()
+        )
+
+        # Ins breite Format umwandeln
+        df_weather_wide = df_weather_grouped.pivot(
+            index="Datum",
+            columns="weather_group"
+        )
+
+        # Spaltennamen erzeugen
+        df_weather_wide.columns = [
+            f"{group}_{metric}"
+            for metric, group
+            in df_weather_wide.columns
+        ]
+
+        # Lesbare Namen
+        df_weather_wide.rename(columns={
+            "CentralEurope_temperature_2m_mean":
+                "CentralEurope_Temp",
+            "CentralEurope_sunshine_hours":
+                "CentralEurope_Sunshine",
+            "CentralEurope_precipitation_sum":
+                "CentralEurope_Precipitation",
+
+            "HolidayDestination_temperature_2m_mean":
+                "HolidayDestination_Temp",
+            "HolidayDestination_sunshine_hours":
+                "HolidayDestination_Sunshine",
+            "HolidayDestination_precipitation_sum":
+                "HolidayDestination_Precipitation"
+        }, inplace=True)
+
+        # Auf sinnvolle Genauigkeit runden
+        df_weather_wide = df_weather_wide.round({
+            "CentralEurope_Temp": 1,
+            "HolidayDestination_Temp": 1,
+
+            "CentralEurope_Sunshine": 1,
+            "HolidayDestination_Sunshine": 1,
+
+            "CentralEurope_Precipitation": 1,
+            "HolidayDestination_Precipitation": 1
+        })
+
+        # An Master-Matrix anhängen
+        df_master = df_master.join(
+            df_weather_wide,
+            how="left"
+        )
+
+        print(
+            f"  -> Wetterdaten erfolgreich integriert "
+            f"({len(df_weather_wide)} Tageswerte)"
+        )
+
+    except Exception as e:
+        print(
+            f"  -> Warnung bei wetter_openmeteo.csv: {e}"
+        )
+
+else:
+    print(
+        "  -> wetter_openmeteo.csv nicht gefunden"
+    )
 # ---------------------------------------------------------
 # 5. LÜCKEN FÜLLEN (FORWARD-FILL)
 # ---------------------------------------------------------

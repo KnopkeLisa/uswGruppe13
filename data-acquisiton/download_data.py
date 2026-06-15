@@ -244,34 +244,6 @@ def download_inflation():
 # Weltweite News
 # ============================================================   
 
-def download_gdelt_news():
-
-    """
-    Lädt tägliches Nachrichten zu Tourismus-/Airline-Themen
-    über GDELT und speichert es als CSV.
-    """
-
-    print("\n=== GDELT News Download ===\n")
-
-    gd = GdeltDoc()
-
-    filters = Filters(
-        keyword="Lufthansa",
-        start_date="2026-05-01",
-        end_date="2026-05-30"
-    )
-
-    timeline = gd.timeline_search(
-        "timelinevolraw",
-        filters
-    )
-    timeline["datetime"] = pd.to_datetime(timeline["datetime"]).dt.date
-
-    filename = os.path.join(
-        OUTPUT_DIR,
-        "gdelt_tourism_news.csv"
-    )
-    timeline.to_csv(filename, mode="a", header=not os.path.exists(filename), index=False)
 
 def download_google_rss_news():
     print("\n=== Google RSS Download ===")
@@ -408,8 +380,6 @@ def main():
     #download_inflation()
     #downloadWetter()
     #download_europe_health_data()
-
-    #download_gdelt_news() #--> Führt des öfteren zu Fehlern, funktioniert aber
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")
 

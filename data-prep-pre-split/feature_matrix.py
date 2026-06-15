@@ -49,6 +49,12 @@ required_cols = [
 ]
 
 df = df.dropna(subset=required_cols)
+return_cols = [
+    col for col in df.columns
+    if "_return_" in col
+]
+
+df = df.dropna(subset=return_cols)
 
 # Speichern
 df.to_csv(

@@ -42,7 +42,7 @@ TICKERS = {
 }
 
 START_DATE = "2023-01-01"
-END_DATE = "2026-05-30"
+END_DATE = "2026-06-21"
 INTERVAL = "1d"
 
 
@@ -339,14 +339,6 @@ def download_europe_health_data():
 
     print("\n=== Health Data Download ===")
     urls = {
-    "grippeweb": {
-        "url": "https://raw.githubusercontent.com/robert-koch-institut/GrippeWeb_Daten_des_Wochenberichts/main/GrippeWeb_Daten_des_Wochenberichts.tsv",
-        "sep": "\t"
-    },
-    "are_konsultationsinzidenz": {
-        "url": "https://raw.githubusercontent.com/robert-koch-institut/ARE-Konsultationsinzidenz/main/ARE-Konsultationsinzidenz.tsv",
-        "sep": "\t"
-    },
     "ECDC_Europa_Inzidenz": {
         "url": "https://raw.githubusercontent.com/EU-ECDC/Respiratory_viruses_weekly_data/main/data/ILIARIRates.csv",
         "sep": ","
@@ -354,9 +346,7 @@ def download_europe_health_data():
 }
     for name, info in urls.items():
         df = pd.read_csv(info["url"], sep=info["sep"])
-        if "Kalenderwoche" in df.columns:
-            kw_col = "Kalenderwoche"
-        elif "yearweek" in df.columns:
+        if "yearweek" in df.columns:
                 kw_col = "yearweek"
         df = df[df[kw_col] >= "2023-W01"]
         df.to_csv(
@@ -372,14 +362,14 @@ def main():
 
     print("Starte Datenbeschaffung!")
 
-    #download_stock_data()
-    #download_google_trends()
-    #download_google_rss_news()
-    #download_holidays()
-    #download_european_school_vacations()
-    #download_inflation()
-    #downloadWetter()
-    #download_europe_health_data()
+    download_stock_data()
+    download_google_trends()
+    download_google_rss_news()
+    download_holidays()
+    download_european_school_vacations()
+    download_inflation()
+    downloadWetter()
+    download_europe_health_data()
 
     print(f"\nDaten gespeichert unter:\n{OUTPUT_DIR}\n")
 

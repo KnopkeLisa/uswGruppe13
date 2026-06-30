@@ -42,13 +42,13 @@ TICKERS = {
 }
 
 START_DATE = "2023-01-01"
-END_DATE = "2026-06-21"
+END_DATE = "2026-06-29"
 INTERVAL = "1d"
 
 
 # ============================================================
 # Yahoo Finance Daten
-# ============================================================
+# ============================================================c
 
 def download_stock_data():
     """
@@ -363,7 +363,7 @@ def main():
     print("Starte Datenbeschaffung!")
 
     download_stock_data()
-    download_google_trends()
+    #download_google_trends()
     download_google_rss_news()
     download_holidays()
     download_european_school_vacations()

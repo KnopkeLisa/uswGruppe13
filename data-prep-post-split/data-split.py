@@ -43,7 +43,7 @@ df = df.sort_index()
 
 train = df.loc["2023-01-10":"2024-12-31"]
 val = df.loc["2025-01-01":"2025-12-31"]
-test = df.loc["2026-01-01":"2026-06-12"]
+test = df.loc["2026-01-01":"2026-06-29"]
 
 
 # ==================================================
@@ -247,15 +247,15 @@ for group_name, features in feature_groups.items():
     # Modelle testen
     models = {
         "LogisticRegression": LogisticRegression(
-            max_iter=1000,
+            max_iter=4000,
             random_state=42
-        ),
-        "RandomForest": RandomForestClassifier(
-            n_estimators=300,
-            max_depth=5,
-            random_state=42,
-            class_weight="balanced"
         )
+        # "RandomForest": RandomForestClassifier(
+        #     n_estimators=300,
+        #     max_depth=5,
+        #     random_state=42,
+        #     class_weight="balanced"
+        # )
     }
 
     for model_name, model in models.items():
@@ -315,5 +315,5 @@ print(
             "val_recall",
             "val_f1"
         ]
-    ].head(10)
+    ].head(30)
 )

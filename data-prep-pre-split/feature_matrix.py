@@ -1,10 +1,12 @@
 import pandas as pd
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
+# BASE_DIR ohne .resolve(), damit es konsistent zu den anderen Skripten bleibt
+BASE_DIR = Path(__file__).parent
 
+# PFADE KORRIGIERT: returns-matrix.csv hat jetzt den richtigen Bindestrich!
 RAW_FILE = BASE_DIR / "raw-data-matrix.csv"
-RETURNS_FILE = BASE_DIR / "returns_matrix.csv"
+RETURNS_FILE = BASE_DIR / "returns-matrix.csv"  # <-- Hier war der Unterstrich-Fehler
 OUTPUT_FILE = BASE_DIR / "feature_matrix.csv"
 
 print("Lade Rohdaten-Matrix...")

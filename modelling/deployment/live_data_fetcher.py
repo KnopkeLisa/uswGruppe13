@@ -4,14 +4,6 @@ from pathlib import Path
 
 
 def get_live_market_core_features(multiply_by_100=False):
-    """
-    Holt die aktuellen Live-Daten für die 'market_core'-Gruppe über die Yahoo Finance API,
-    berechnet die 5-Tages-Renditen und formatiert sie exakt für die Modelle.
-
-    Parameters:
-    - multiply_by_100 (bool): Auf True setzen, falls eure Trainingsdaten als
-                              Prozentwerte (z.B. 2.5 für 2.5%) statt als Dezimalzahlen (0.025) vorliegen.
-    """
 
     tickers = {
         "^GDAXI": "DAX_Kurs_return_5d",

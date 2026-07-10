@@ -3,7 +3,7 @@ from pathlib import Path
 import joblib
 
 # ==================================================
-# Setup & Pfade
+# Setup
 # ==================================================
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
@@ -26,16 +26,13 @@ print("Initialisiere Paper-Trading Simulator für die Logistische Regression..."
 X_test = pd.read_csv(DATA_DIR / "X_test.csv", index_col=0)
 model = joblib.load(MODEL_DIR / "logistic_regression_market_core.pkl")
 
-# Letzten verfügbaren Datenpunkt extrahieren (Simulierter heutiger Live-Tag)
 live_data_point = X_test[MARKET_CORE_FEATURES].tail(1)
 live_date = live_data_point.index[0]
 
-# Prognose & Wahrscheinlichkeit berechnen
 prediction = model.predict(live_data_point)[0]
 probabilities = model.predict_proba(live_data_point)[0]
 prob_up = probabilities[1]
 
-# Trading-Logik & strukturierte Konsolenausgabe
 print("\n" + "="*50)
 print(f"=== LIVE PAPER TRADING SIGNAL (LOG REG) FÜR {live_date} ===")
 print("="*50)
@@ -54,7 +51,6 @@ print(f"Empfohlene Trading-Aktion:        {action_str}")
 print("Hinweis: Bei Signalwechsel fällt eine Gebühr von 0.1% an.")
 print("="*50)
 
-# Modelltreiber: Zeige an, welche Features die heutige Entscheidung dominieren
 print("\nModell-Treiber (Gewichtung der Koeffizienten):")
 try:
     for feat, coef_val in zip(MARKET_CORE_FEATURES, model.coef_[0]):

@@ -2,8 +2,6 @@ import os
 import joblib
 import pandas as pd
 from pathlib import Path
-
-# Alpaca SDK Komponenten
 from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
@@ -11,26 +9,31 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 from live_data_fetcher import get_live_market_core_features
 
 # ==================================================
-# CONFIGURATION
+# KONFIGURATION
 # ==================================================
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 
+# Modellauswahl
 MODEL_NAME = "random_forest"
 GROUP = "market_core"
+MODEL_FILE_NAME = "rf_model.pkl"
 
 SCALER_PATH = PROJECT_ROOT / "data-prep-post-split" / "feature_groups" / GROUP / "standard_scaler.pkl"
-MODEL_PATH = PROJECT_ROOT / "modelling" / f"output_{MODEL_NAME}" / "rf_model.pkl"
+MODEL_PATH = PROJECT_ROOT / "modelling" / f"output_{MODEL_NAME}" / MODEL_FILE_NAME
 
 ALPACA_API_KEY = "PKPSUIBN4QOSVSDMT63QZYX664"
 ALPACA_SECRET_KEY = "Gi5Zo3qNwLjRyzQLc9z9VwfKhLxaBfC6zvX2KDQFrZkM"
 
 TRADING_SYMBOL = "SPY"
 ORDER_QTY = 10
-CONFIDENCE_THRESHOLD = 0.60
+
+# SCHWELLENWERTE
+BUY_THRESHOLD = 0.60  # Ab 60% wird gekauft
+SELL_THRESHOLD = 0.45  # Unter 45% wird verkauft
 
 # ==================================================
-# 1. INIT & DATEN LADEN
+# 1. Daten laden
 # ==================================================
 if not MODEL_PATH.exists():
     raise FileNotFoundError(f"Fehler: Modell '{MODEL_NAME}' nicht gefunden unter: {MODEL_PATH}")
@@ -58,14 +61,12 @@ X_live_scaled = pd.DataFrame(
 # ==================================================
 # 2. VORHERSAGE GENERIEREN
 # ==================================================
-prediction = model.predict(X_live_scaled)[0]
 probability = model.predict_proba(X_live_scaled)[0][1]
 
 print("\n" + "=" * 50)
 print(f"=== LIVE TRADING SIGNAL FÜR {X_live_raw.index[0].strftime('%Y-%m-%d')} ===")
 print("=" * 50)
-print(f"Modell-Vorhersage: {'STEIGT (1)' if prediction == 1 else 'FÄLLT (0)'}")
-print(f"Konfidenz (Wahrscheinlichkeit): {probability:.2%}")
+print(f"Modell-Konfidenz (Wahrscheinlichkeit für Anstieg): {probability:.2%}")
 print("-" * 50)
 
 # ==================================================
@@ -84,11 +85,14 @@ except Exception:
 print("-" * 50)
 
 # ==================================================
-# 4. TRADING LOGIK (Die Strategie)
+# 4.TRADING LOGIK
 # ==================================================
-if prediction == 1 and probability >= CONFIDENCE_THRESHOLD:
+
+# BUY (>= 60%)
+if probability >= BUY_THRESHOLD:
     if current_qty == 0:
-        print(f">>> AKTION: Starkes Kaufsignal! Sende Order an Alpaca...")
+        print(f">>> AKTION: Signal BEWERTUNG -> BUY (Konfidenz >= {BUY_THRESHOLD:.0%})")
+        print("Sende Kauforder an Alpaca...")
 
         market_order_data = MarketOrderRequest(
             symbol=TRADING_SYMBOL,
@@ -96,22 +100,26 @@ if prediction == 1 and probability >= CONFIDENCE_THRESHOLD:
             side=OrderSide.BUY,
             time_in_force=TimeInForce.GTC
         )
-
         trading_client.submit_order(order_data=market_order_data)
         print(f"ERFOLG: Market-Buy Order über {ORDER_QTY} {TRADING_SYMBOL} platziert.")
     else:
-        print(f">>> AKTION: Wir halten {TRADING_SYMBOL} bereits. Trend ist weiterhin positiv. Kein Handlungsbedarf.")
+        print(
+            f">>> AKTION: Signal BEWERTUNG -> BUY, aber wir halten {TRADING_SYMBOL} bereits. Keine Aktion nötig (Gewinne laufen lassen).")
 
-elif prediction == 0:
-    if current_qty > 0:
-        print(f">>> AKTION: Trend dreht ins Negative! Verkaufe Position...")
-        trading_client.close_position(TRADING_SYMBOL)
-        print(f"ERFOLG: Gesamte {TRADING_SYMBOL} Position zum Verkauf freigegeben.")
-    else:
-        print(f">>> AKTION: Trend ist negativ, aber wir sind bereits flat (keine Aktien). Kein Handlungsbedarf.")
+# HOLD (45% bis 59%)
+elif SELL_THRESHOLD <= probability < BUY_THRESHOLD:
+    print(f">>> AKTION: Signal BEWERTUNG -> HOLD ({SELL_THRESHOLD:.0%} - {BUY_THRESHOLD - 0.01:.0%})")
+    print("Die Konfidenz ist im neutralen Bereich. Es wird keine Aktion ausgeführt.")
 
+# SELL (< 45%)
 else:
-    print(
-        f">>> AKTION: Modell sagt leicht positiv, aber Konfidenz ({probability:.2%}) ist unter dem Schwellenwert ({CONFIDENCE_THRESHOLD:.2%}). Wir warten ab.")
+    if current_qty > 0:
+        print(f">>> AKTION: Signal BEWERTUNG -> SELL (Konfidenz < {SELL_THRESHOLD:.0%})")
+        print("Sende Verkaufsorder an Alpaca um Position komplett zu schließen...")
+
+        trading_client.close_position(TRADING_SYMBOL)
+        print(f"ERFOLG: Gesamte {TRADING_SYMBOL} Position wurde glattgestellt.")
+    else:
+        print(f">>> AKTION: Signal BEWERTUNG -> SELL, aber wir besitzen aktuell keine Aktien. Keine Aktion nötig.")
 
 print("=" * 50 + "\n")

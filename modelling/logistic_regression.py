@@ -77,7 +77,7 @@ print(classification_report(y_val, y_val_pred))
 
 
 # ==================================================
-# Koeffizienten anzeigen
+# Koeffizienten
 # ==================================================
 
 coef_df = pd.DataFrame({
@@ -92,7 +92,7 @@ coef_df.to_csv(OUTPUT_DIR / "logistic_regression_coefficients.csv", index=False)
 
 
 # ==================================================
-# Finales Modell: Train + Validation
+# Train + Validation
 # ==================================================
 
 X_train_val = pd.concat([X_train, X_val])
@@ -158,7 +158,7 @@ print(OUTPUT_DIR / "logistic_regression_market_core.pkl")
 
 
 # ==================================================
-# Beispiel: letzte verfügbare Beobachtung vorhersagen
+# letzte verfügbare Beobachtung vorhersagen
 # ==================================================
 
 latest_row = X_test.tail(1)

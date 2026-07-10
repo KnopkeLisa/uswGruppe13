@@ -18,34 +18,29 @@ def get_live_market_core_features(multiply_by_100=False):
     print("Starte Live-Datenabruf von Yahoo Finance...")
 
     for ticker, feature_name in tickers.items():
-        # Wir laden 1 Monat Historie, um die 5-Tages-Rendite über Wochenenden hinweg sicher zu berechnen
         df = yf.download(ticker, period="1mo", progress=False)
 
         if df.empty:
             raise ValueError(f"Kritischer Fehler: Keine Daten für Ticker {ticker} empfangen!")
 
-        # Bereinigung: Nur die Schlusspreise ('Close') extrahieren und flachklopfen
+        # Bereinigung:
         close_series = df['Close'].squeeze()
 
-        # Berechnung der 5-Tages-Rendite (prozentuale Veränderung zu vor 5 Handelstagen)
+        # Berechnung der 5-Tages-Rendite
         returns_5d = close_series.pct_change(5)
 
-        # Anpassung an das Datenformat eures Preprocessing-Skripts
+        # Anpassung an das Datenformat
         if multiply_by_100:
             returns_5d = returns_5d * 100.0
 
-        # Den aktuellsten gültigen Wert extrahieren (heute bzw. letzter Handelstag)
         live_features[feature_name] = float(returns_5d.iloc[-1])
 
-        # Das Datum des letzten Datenpunktes merken (für den Index)
         if latest_trading_date is None:
             latest_trading_date = returns_5d.index[-1]
 
-    # In ein DataFrame mit einer Zeile umwandeln (wichtig für Scikit-Learn .predict())
     live_df = pd.DataFrame([live_features], index=[latest_trading_date])
     live_df.index.name = "Datum"
 
-    # Exakte Spaltenreihenfolge erzwingen, die beim Modell-Training genutzt wurde
     exact_column_order = [
         "DAX_Kurs_return_5d",
         "VIX_Kurs_return_5d",

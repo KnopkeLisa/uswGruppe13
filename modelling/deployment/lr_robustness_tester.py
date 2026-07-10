@@ -58,7 +58,7 @@ else:
     if len(rob_df) > 0 and rob_df["Signal"].iloc[0] == 1:
         rob_df.iloc[0, rob_df.columns.get_loc("Signal_Change")] = 1.0
 
-    HANDELSGEBUEHR = 0.001
+    HANDELSGEBUEHR = 0.0
     rob_df["Strategy_Return"] = rob_df["Strategy_Return_Raw"] - (rob_df["Signal_Change"] * HANDELSGEBUEHR)
 
     rob_df["Cumulative_Strategy"] = (1 + rob_df["Strategy_Return"]).cumprod()

@@ -4,7 +4,7 @@ from pathlib import Path
 import joblib
 
 # ==================================================
-# Setup & Pfade
+# Setup
 # ==================================================
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
@@ -15,7 +15,7 @@ MODEL_DIR = PROJECT_ROOT / "modelling" / "output_random_forest"
 PRE_SPLIT_PATH = PROJECT_ROOT / "data-prep-pre-split" / "feature_matrix.csv"
 
 # ==================================================
-# Daten & Modell laden
+# Daten laden
 # ==================================================
 print(f"Lade Daten ({GROUP}) für den Robustheits-Check (Peer-Group)...")
 X_test = pd.read_csv(DATA_DIR / "X_test.csv", index_col=0)
@@ -25,7 +25,7 @@ rf_model = joblib.load(MODEL_DIR / "rf_model.pkl")
 y_test_pred = rf_model.predict(X_test)
 
 # ==================================================
-# Robustheits-Test: Anwendung auf Peer-Asset (Lufthansa)
+# Robustheits-Test
 # ==================================================
 print("Lade Lufthansa-Peer-Daten aus der Feature-Matrix...")
 df_orig = pd.read_csv(PRE_SPLIT_PATH)
@@ -54,9 +54,6 @@ else:
         "Signal": y_test_pred
     }, index=X_test.index)
 
-    # ==================================================
-    # KORREKTUR 4: Transaktionsgebühren einrechnen (0.1%)
-    # ==================================================
     rob_df["Strategy_Return_Raw"] = rob_df["Signal"] * rob_df["Peer_Return"]
 
     rob_df["Signal_Change"] = rob_df["Signal"].diff().abs().fillna(0)
@@ -64,7 +61,7 @@ else:
     if len(rob_df) > 0 and rob_df["Signal"].iloc[0] == 1:
         rob_df.iloc[0, rob_df.columns.get_loc("Signal_Change")] = 1.0
 
-    HANDELSGEBUEHR = 0.001
+    HANDELSGEBUEHR = 0.0
     total_trades = int(rob_df["Signal_Change"].sum())
 
     rob_df["Strategy_Return"] = rob_df["Strategy_Return_Raw"] - (rob_df["Signal_Change"] * HANDELSGEBUEHR)

@@ -3,7 +3,7 @@ from pathlib import Path
 import joblib
 
 # ==================================================
-# Setup & Pfade
+# Setup
 # ==================================================
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
@@ -29,7 +29,7 @@ probabilities = rf_model.predict_proba(live_data_point)[0]
 prob_up = probabilities[1]
 
 # ==================================================
-# Trading Logik & Ausgabe
+# Trading Logik
 # ==================================================
 print("\n" + "="*50)
 print(f"=== LIVE PAPER TRADING SIGNAL FÜR {live_date} ===")
